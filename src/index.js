@@ -8,6 +8,7 @@ import PanoViewer from "./PanoViewer";
 function App() {
   return (
     <div className="App">
+
       <PanoViewer />
     </div>
   );
@@ -15,3 +16,5 @@ function App() {
 
 const rootElement = document.getElementById("root");
 ReactDOM.render(<App />, rootElement);
+
+//github.com/google/marzipano/blob/master/demos/embedded-hotspots/index.js
