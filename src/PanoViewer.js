@@ -1,10 +1,14 @@
 import React, { useEffect,useState } from "react";
 import Marzipano, { RectilinearView } from "marzipano";
-import glassImage from './images/glass.png';
-import { Menu, MenuItem } from "@mui/material";
+import { ListItemIcon, ListItemText, Menu, MenuItem, Typography } from "@mui/material";
 import room360 from './images/room360.jpg';
 import './css/drag_points.css'
 import $ from 'jquery';
+import ContentPasteIcon from '@mui/icons-material/ContentPaste';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import CreateIcon from '@mui/icons-material/Create';
+import SaveAltOutlinedIcon from '@mui/icons-material/SaveAltOutlined';
 
 const PanoViewer = () => {
 
@@ -32,6 +36,15 @@ const PanoViewer = () => {
 	const handleClose = () => {
 		setContextMenu(null);
 	};
+
+	const getHtmlString = (id) => {
+		return `<div class="${id}_container" style="transform: translateX(411px) translateY(331.5px) translateX(-50%) translateY(-50%) perspective(649.8px) translateZ(649.8px) rotateZ(0rad) rotateX(-0.463172rad) rotateY(0.516191rad) rotateY(-0.414437rad) rotateX(0.0814841rad) translateZ(-500px); display: block; position: absolute;"><div class="img" id="${id}" style="transform: matrix3d(0.620812, -0.200743, 0, 0.00067799, -0.0261441, 0.458816, 0, 0.000114025, 0, 0, 1, 0, -58.8559, -135.987, 0, 1);"></div><div class="pt ${id} tl" style="left: -8.75781px; top: -0.00740814px;"></div><div class="pt ${id} tr" style="left: 346.014px; top: -13.9266px;"></div><div class="pt ${id} bl" style="top: 289.993px; left: -6.75781px;"></div><div class="pt ${id} br" style="left: 330.287px; top: 193.378px;"></div></div>`
+	}
+
+	const parseStringToHtml = (string) => {
+		var parser = new DOMParser();
+		return parser.parseFromString(string, "text/html").body.firstChild;
+	}
 
 	const createScene = (viewer) => {
 		const source = Marzipano.ImageUrlSource.fromString(
@@ -68,7 +81,8 @@ const PanoViewer = () => {
 	const createHotspot = (scene, hotspotElement) => {
 		const hotspot = scene.hotspotContainer().createHotspot(hotspotElement, {
 				yaw: 0,
-				pitch: 0
+				pitch: 0,
+				// yaw: 0.41443682662942294, pitch: 0.08148413711388613
 			},
 			{ perspective: { radius: 500,
 				 	// extraTransforms: "rotateX(5deg)" 
@@ -79,11 +93,17 @@ const PanoViewer = () => {
 		return hotspot;
 	}
 	
-	const addDrag = (element, hotspot, viewer) => {
+	const addDrag = (element, hotspot, viewer,id) => {
 		let lastX, lastY;
-		var container = $(".container");
-		var img = $(".img");
-		var pts = $(".pt");
+		var container = $(`.${id}_container`);
+		var img = $("#"+id);
+		var pts = $("."+id);
+		console.log({
+			img,
+			pts,
+			filter:pts.filter(`tl`),
+			container
+		})
 
 		function onDragMouseDown (e) {
 			viewer.controls().disable();
@@ -146,19 +166,19 @@ const PanoViewer = () => {
 		var IMG_HEIGHT = 512;
   
 		var transform = new window.PerspectiveTransform(img[0], IMG_WIDTH, IMG_HEIGHT, true);
-		var tl = pts.filter(".tl").css({
+		var tl = pts.filter(`tl`).css({
 			left : transform.topLeft.x,
 			top : transform.topLeft.y
 		});
-		var tr = pts.filter(".tr").css({
+		var tr = pts.filter(`tr`).css({
 			left : transform.topRight.x,
 			top : transform.topRight.y
 		});
-		var bl = pts.filter(".bl").css({
+		var bl = pts.filter(`bl`).css({
 			left : transform.bottomLeft.x,
 			top : transform.bottomLeft.y
 		});
-		var br = pts.filter(".br").css({
+		var br = pts.filter(`br`).css({
 			left : transform.bottomRight.x,
 			top : transform.bottomRight.y
 		});
@@ -188,11 +208,14 @@ const PanoViewer = () => {
 	}
 	const createHotspotOnClick = (event,scene,viewer) => {
 		event.preventDefault()
-		const hotspotElement = createNewHosSpotElement();
+		let id = Math.random().toString(36).substring(7);
+		// const hotspotElement = parseStringToHtml(getHtmlString(id));
+		const hotspotElement = createNewHosSpotElement(id);
+		// return
+		// createNewHosSpotElement(id);
 		const hotspot = createHotspot(scene, hotspotElement);
-		addDrag(hotspotElement, hotspot, viewer);
+		addDrag(hotspotElement, hotspot, viewer,id);
 	
-
 		const x = contextMenu ? contextMenu.mouseX : event.clientX;
 		const y = contextMenu ? contextMenu.mouseY : event.clientY; 
 
@@ -200,9 +223,10 @@ const PanoViewer = () => {
 		
 	}
 
-	const createNewHosSpotElement = () => {
+	const createNewHosSpotElement = (id) => {
 		const element = document.createElement("div")
-		element.classList.add("container") 
+		element.classList.add(id+"_container") 
+
 		const imgDiv = document.createElement("div")
 		const tlDiv = document.createElement("div")
 		const trDiv = document.createElement("div")
@@ -210,10 +234,18 @@ const PanoViewer = () => {
 		const brDiv =  document.createElement("div")
 
 		imgDiv.classList.add("img")
-		tlDiv.classList.add("pt","tl")
-		trDiv.classList.add("pt","tr")
-		blDiv.classList.add("pt","bl")
-		brDiv.classList.add("pt","br")
+		imgDiv.id = id
+
+		tlDiv.classList.add("pt",id,"tl")
+
+		trDiv.classList.add("pt",id,"tr")
+		trDiv.style = "left:512px"
+
+		blDiv.classList.add("pt",id,"bl")
+		blDiv.style = "top:512px"
+
+		brDiv.classList.add("pt",id,"br")
+		brDiv.style = "left:512px;top:512px"
 
 		element.appendChild(imgDiv)
 		element.appendChild(tlDiv)
@@ -221,10 +253,6 @@ const PanoViewer = () => {
 		element.appendChild(blDiv)
 		element.appendChild(brDiv)
 
-		// element.style.width = "100px";
-		// element.style.height = "100px";
-		// element.innerText = "Hotspot";
-		// element.style.backgroundColor = "blue";
 		return element;
 	}
 
@@ -283,7 +311,21 @@ const PanoViewer = () => {
 					: undefined
 				}
 			>
-				<MenuItem onClick={(e) => handleCreateRectangle(e,scene,viewer)}>Create Rectangale Div</MenuItem>
+				<MenuItem onClick={(e) => handleCreateRectangle(e,scene,viewer)}>
+					<ListItemIcon>
+						<CreateIcon fontSize="small" />
+					</ListItemIcon>
+					<ListItemText>Create Image Hotspot</ListItemText>
+					{/* <Typography variant="body2" color="text.secondary">
+						⌘X
+					</Typography> */}
+				</MenuItem>
+				<MenuItem onClick={(e) => handleCreateRectangle(e,scene,viewer)}>
+					<ListItemIcon>
+						<SaveAltOutlinedIcon fontSize="small" />
+					</ListItemIcon>
+					<ListItemText>Save</ListItemText>
+				</MenuItem>
 				{/* <MenuItem onClick={handleClose}>Print</MenuItem>
 				<MenuItem onClick={handleClose}>Highlight</MenuItem>
 				<MenuItem onClick={handleClose}>Email</MenuItem> */}
