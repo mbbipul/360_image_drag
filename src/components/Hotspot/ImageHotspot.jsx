@@ -14,6 +14,7 @@ import {
     CardMedia,
     CardContent,
     CardActions,
+    Slider,
 } from '@mui/material';
 import { makeStyles, styled } from '@mui/styles';
 import React,{ useContext, useEffect,useState,useRef } from 'react';
@@ -87,6 +88,11 @@ const ImageHotspot = (props) => {
     const [actionUrl, setActionUrl] = useState('');
     const [hotspots,saveHotSpot] = useHotspot()
     const hotspotCardRef = useRef(null);
+
+    const [cardSize, setCardSize] = useState({
+        width: 300,
+        height: 300
+    });
 
     const {viewer,scene} = useContext(PanoromaContext);
 
@@ -425,6 +431,19 @@ const ImageHotspot = (props) => {
                                         InputLabelProps={{ shrink: true }}
                                         onChange={(e)=>{setActionUrl(e.target.value)}}
                                     />
+                                    <Slider
+                                        defaultValue={300}
+                                        // getAriaValueText={valuetext}
+                                        valueLabelDisplay="auto"
+                                        // step={10}
+                                        // marks
+                                        min={300}
+                                        max={800}
+                                        onChange={(e,value)=>{setCardSize({
+                                            ...cardSize,
+                                            width : value
+                                        })}}
+                                    />
                                 </Grid>
                             </Grid>
                             <Grid item md={5}>
@@ -442,8 +461,10 @@ const ImageHotspot = (props) => {
                                 </Box>
                                 <Card 
                                     ref={hotspotCardRef}
-                                    className={classes.hotspotCard}
-                                    sx={{ maxWidth: 300 }}>
+                                    // style={{
+                                    //     width: cardSize.width,
+                                    // }}
+                                    className={classes.hotspotCard}>
                                     <CardMedia
                                         component="img"
                                         alt={name}
