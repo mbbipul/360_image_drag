@@ -1,4 +1,4 @@
-import React, { useEffect,useState } from "react";
+import React, { useEffect,useState,useRef, createContext } from "react";
 import Marzipano, { RectilinearView } from "marzipano";
 import { ListItemIcon, ListItemText, Menu, MenuItem, Typography } from "@mui/material";
 import room360 from './images/room360.jpg';
@@ -9,12 +9,20 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CreateIcon from '@mui/icons-material/Create';
 import SaveAltOutlinedIcon from '@mui/icons-material/SaveAltOutlined';
+import Fabmenu from "./components/common/FabMenu";
+import { IntegrationInstructions, AddLink} from '@mui/icons-material';
+import HotspotCreateDialog from "./components/Hotspot/HotspotCreateDialog";
+import { PanoromaContext } from "./store/context/panoromaContext";
 
 const PanoViewer = () => {
 
+	const [openHotspotCreateDialog, setOpenHotspotCreateDialog] = useState(false);
 	const [scene,setScene] = useState(null);
 	const [viewer,setViewer] = useState(null);
 	const [hotspotReady,setHotspotReady] = useState(false);
+	const [hotspotElements,setHotspotElements] = useState([]);
+	const [hotspots,setHotspots] = useState([]);
+	const cursorRef = useRef(null);
 
 	const [contextMenu, setContextMenu] = useState(null);
 
@@ -51,23 +59,12 @@ const PanoViewer = () => {
 			room360
 		);
 	
-		const geometry = new Marzipano.EquirectGeometry([{ width: 4096 }]);
+		const geometry = new Marzipano.EquirectGeometry([{ width: 1024*8 }]);
 	
-		const limiter = Marzipano.util.compose(
-			Marzipano.RectilinearView.limit.vfov(0, 3),
-			Marzipano.RectilinearView.limit.hfov(0, 3),
-			Marzipano.RectilinearView.limit.pitch(-Math.PI / 2, Math.PI / 2)
-		);
-	
-		const view = new Marzipano.RectilinearView(
-			{
-				yaw: 0,
-				pitch: 0,
-				fov: (100 * Math.PI) / 180
-			},
-			limiter
-		);
-	
+		// Create view.
+		const limiter = Marzipano.RectilinearView.limit.traditional(65536, 100*Math.PI/180);
+		const view = new Marzipano.RectilinearView(null, limiter);
+
 		const scene = viewer.createScene({
 			source: source,
 			geometry: geometry,
@@ -84,7 +81,9 @@ const PanoViewer = () => {
 				pitch: 0,
 				// yaw: 0.41443682662942294, pitch: 0.08148413711388613
 			},
-			{ perspective: { radius: 500,
+			{ 
+				perspective: { 
+					radius: 1000,
 				 	// extraTransforms: "rotateX(5deg)" 
 				}
 			}
@@ -220,6 +219,10 @@ const PanoViewer = () => {
 		const y = contextMenu ? contextMenu.mouseY : event.clientY; 
 
 		hotspot.setPosition(viewer.view().screenToCoordinates({ x, y }));
+		setHotspots([...hotspots, {
+			id,
+			hotspot
+		}]);
 		
 	}
 
@@ -263,9 +266,38 @@ const PanoViewer = () => {
 		setHotspotReady(true)
 	}
 
+	const handleOnSaveHotspot = () => {
+		let _hotspots = hotspots.map(({hotspot,id}) => {
+			console.log({
+				hotspot
+			})
+			let data = {
+				id: id,
+				position: hotspot._params,
+				perspective: hotspot._perspective,
+				element: hotspot._domElement,
+			}
+			return data;
+		})
+		console.log({_hotspots})
+		setHotspotElements(hotspots)
+	}
+
+	const listenDragOnly = (element, callback, threshold=5) => {
+		let drag = 0;
+		element.addEventListener('mousedown', () => drag = 0);
+		element.addEventListener('mousemove', () => drag++);
+		element.addEventListener('mouseup', e => {
+		  if (drag>threshold) callback(e);
+		});
+	  }
+
 	useEffect(() => {
 		const panoramaContainer = document.querySelector("#panorama-container");
-		const viewer = new Marzipano.Viewer(panoramaContainer);
+		const viewer = new Marzipano.Viewer(panoramaContainer,{
+			stageType: 'webgl',
+			stage: {progressive: true}
+		});
 		const scene = createScene(viewer);
 		setScene(scene)
 		setViewer(viewer)
@@ -275,10 +307,32 @@ const PanoViewer = () => {
 
 	useEffect(() => {
 		if(!hotspotReady) return;
-		console.log({viewer})
 		
 	},[hotspotReady,viewer])
 	
+	const fabs = [
+		{
+			icon: <IntegrationInstructions />,
+			onClick: () => setOpenHotspotCreateDialog(true),
+			title: "Add hotspot",
+			color: "primary"
+		},
+		{
+			icon: <AddLink />,
+			onClick: () => {},
+			title: "Add link to scene",
+			color: "primary"
+		}
+	]
+
+	useEffect(() => {
+		if(cursorRef && viewer){
+			const box = cursorRef.current.getBoundingClientRect()
+			console.log(box.x)
+			console.log(viewer.view().screenToCoordinates({x: box.x, y: box.y }))
+		}
+	} ,[cursorRef,viewer])
+
 	return (
 		<div
 			id="panorama-container"
@@ -291,6 +345,20 @@ const PanoViewer = () => {
 			}}
 			onContextMenu={handleContextMenu}
 		>
+			<div 
+				ref={cursorRef}
+				style={{
+					position: "absolute",
+					left: '50%',
+					top: '50%',
+					width: 30,
+					height: 30,
+					borderRadius: '50%',
+					backgroundColor: "#79f4f838",
+					zIndex: 99999
+				}}>
+			</div>
+			<Fabmenu fabs={fabs}/>
 			{/* <div id="hotspot" style={{
 				background: "red",
 				width: "100px",
@@ -320,7 +388,7 @@ const PanoViewer = () => {
 						⌘X
 					</Typography> */}
 				</MenuItem>
-				<MenuItem onClick={(e) => handleCreateRectangle(e,scene,viewer)}>
+				<MenuItem onClick={handleOnSaveHotspot}>
 					<ListItemIcon>
 						<SaveAltOutlinedIcon fontSize="small" />
 					</ListItemIcon>
@@ -330,6 +398,11 @@ const PanoViewer = () => {
 				<MenuItem onClick={handleClose}>Highlight</MenuItem>
 				<MenuItem onClick={handleClose}>Email</MenuItem> */}
 			</Menu>
+			<PanoromaContext.Provider value={{ viewer,scene}}>
+				<HotspotCreateDialog
+					open={openHotspotCreateDialog} 
+					onClose={() => setOpenHotspotCreateDialog(false)}/>
+			</PanoromaContext.Provider>
 		</div>
 	);
 };

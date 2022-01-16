@@ -1,24 +1,14 @@
 
 .container {
     position: absolute;
-    /* width: 512px;
-    height: 512px;
-    background-color: #FFF;
-    
-    border: 20px solid #FFF;
-    -moz-box-shadow: 0 0 30px #CCC;
-    -webkit-box-shadow: 0 0 30px #CCC;
-    -o-box-shadow: 0 0 30px #CCC;
-    -ms-box-shadow: 0 0 30px #CCC;
-    box-shadow: 0 0 30px #CCC; */
 }
 .img {
     position: absolute;
     width: 500px; 
     height: 500px;
-    background-repeat: no-repeat;
-    background-size:contain;
-    background-image: url(../images/bb.jpg);
+    /* background-repeat: no-repeat; */
+    /* background-size:contain; */
+    /* background-image: url(../images/bb.jpg); */
     cursor: move;
 }
 .pt {

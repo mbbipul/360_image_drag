@@ -8,7 +8,6 @@ import PanoViewer from "./PanoViewer";
 function App() {
   return (
     <div className="App">
-
       <PanoViewer />
     </div>
   );

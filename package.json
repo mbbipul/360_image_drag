@@ -1,5 +1,5 @@
 {
-  "name": "marzipano",
+  "name": "360_degree",
   "version": "1.0.0",
   "description": "",
   "keywords": [],
@@ -10,10 +10,12 @@
     "@mui/icons-material": "^5.2.5",
     "@mui/material": "^5.2.7",
     "@mui/styled-engine-sc": "^5.1.0",
+    "@mui/styles": "^5.2.3",
     "jquery": "^3.6.0",
     "marzipano": "0.8.0",
     "react": "^17.0.2",
     "react-dom": "16.8.3",
+    "react-floating-button-menu": "^2.1.1",
     "react-resizable-rotatable-draggable": "^0.2.0",
     "react-scripts": "2.1.8",
     "styled-components": "^5.3.3"
